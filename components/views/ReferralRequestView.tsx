@@ -9,12 +9,12 @@ interface FaqItemProps {
 
 // --- 예시 데이터 ---
 const requester = {
-    name: '김민준',
+    name: '도진우',
     title: 'Software Engineer',
-    company: '네이버 (Navers)',
+    company: '도비스튜디오 (Navers)',
     profileImageUrl: 'https://cf.channel.io/thumb/200x200/pub-file/145640/677787db863f91cd0229/tmp-2113922959',
     linkedinUrl: 'https://www.linkedin.com/in/example', // 링크드인 URL 추가
-    roleDescription: '네이버 AI 부서에서 대규모 언어 모델을 개발하고 있습니다.',
+    roleDescription: '도비스튜디오 AI 부서에서 대규모 언어 모델을 개발하고 있습니다.',
     background: '저희는 B2B 세일즈 SaaS를 운영하고 있고, 현재 대기업 확장을 준비 중입니다.'
 };
 
