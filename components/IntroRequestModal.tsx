@@ -1,8 +1,9 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { SearchResultItem, Contact } from '../types';
 import { RelationshipStrength } from '../types';
 import { XIcon, PaperAirplaneIcon, UserCircleIcon, InformationCircleIcon } from './icons';
+import { Gift, FileText, User, Briefcase, Building, Linkedin } from 'lucide-react';
 
 const getStrengthBadgeColor = (strength: RelationshipStrength) => {
   switch (strength) {
@@ -33,7 +34,6 @@ const anonymizeContactName = (contact: Contact) => {
     return `${contact.company} 직원 ${getCharFromId(contact.id)}`;
 };
 
-// This map ensures consistent anonymization across the component lifecycle.
 const connectorNameMap = new Map<string, string>();
 let connectorCharIndex = 0;
 const anonymizeConnectorName = (name: string): string => {
@@ -57,21 +57,32 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
   const { contact, connectors } = searchResult;
   const anonymizedTargetName = anonymizeContactName(contact);
   const [selectedConnector, setSelectedConnector] = useState<string>(connectors[0]?.name || '');
-  const [message, setMessage] = useState('');
   const [isConfirmationModalOpen, setConfirmationModalOpen] = useState(false);
-  const [requesterInfo, setRequesterInfo] = useState({
-    name: '',
-    title: '',
-    company: '',
-    linkedin: '',
-    roleDescription: '',
-    background: '',
+  
+  const [formData, setFormData] = useState({
+    requesterName: '',
+    requesterTitle: '',
+    requesterCompany: '',
+    requesterLinkedin: '',
+    requesterRoleDescription: '',
+    requestReason: '',
+    actualRequestWording: '혹시 연결해주셔도 괜찮을까요?\n 다음과 같은 목적으로 소개를 요청드리고자 합니다.',
+    rewardAmount: '60000', // Default value
   });
 
-  const handleRequesterInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setRequesterInfo(prevState => ({ ...prevState, [name]: value }));
+    setFormData(prevState => ({ ...prevState, [name]: value }));
   };
+
+  const messagePreview = useMemo(() => {
+    const { requesterName, requesterCompany, requesterTitle, rewardAmount } = formData;
+    const targetInfo = `${contact.company} ${contact.title}`;
+    const introducerInfo = `{{소개자 회사}}의 {{소개자}}`;
+    const reward = rewardAmount ? (parseInt(rewardAmount, 10) / 2).toLocaleString() : '{{리워드/2}}';
+
+    return `안녕하세요 ${contact.name}님.\n저는 ${introducerInfo}입니다.\n저에게 아래와 같은 요청이 들어왔는데, 혹시 소개받으실 의향이 있으실까요?\n${requesterCompany || '{{소개요청자_회사명}}'}, ${requesterTitle || '{{소개요청자_직책}}'} ${requesterName || '{{소개요청자_이름}}'}이 ${targetInfo}을 만나고 싶어합니다.\n소개 수락시 ${contact.name}님의 이름과 비즈니스 이메일이 공개되며,\n소개 수락 리워드로 ${reward}원이 지급됩니다.\n괜찮으시다면, 아래 링크로 초대 수락해주시면 됩니다!`;
+  }, [formData, contact]);
 
   const handleSubmit = () => {
     try {
@@ -83,8 +94,16 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
         introducerName: selectedConnector,
         status: 'Pending',
         requestedAt: new Date().toISOString(),
-        requesterInfo,
-        message,
+        requesterInfo: {
+          name: formData.requesterName,
+          title: formData.requesterTitle,
+          company: formData.requesterCompany,
+          linkedin: formData.requesterLinkedin,
+          roleDescription: formData.requesterRoleDescription,
+        },
+        message: formData.requestReason,
+        actualRequestWording: formData.actualRequestWording,
+        reward: formData.rewardAmount,
       };
       localStorage.setItem('introRequests', JSON.stringify([newItem, ...prev]));
     } catch (e) {
@@ -101,7 +120,7 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"></div>
         <div className="fixed inset-0 z-10 w-screen overflow-y-auto">
           <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+            <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
               <div className="bg-white px-4 pb-4 pt-5 sm:p-6 sm:pb-4">
                 <div className="w-full">
                   <div className="flex justify-between items-center">
@@ -111,11 +130,6 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
                     </button>
                   </div>
                   
-                  <div className="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 rounded-r-lg">
-                      <p className="font-bold">소개 성사시</p>
-                      <p className="text-sm">소개 대상자가 수락시, 소개 대상자의 이름과 비즈니스 이메일이 공개됩니다. 다만, 소개 수락이 미팅 성사를 보장하는 것은 아니며 소개 대상자의 이름과 비즈니스 이메일만 공개됩니다.</p>
-                  </div>
-
                   <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                       <p className="text-sm font-medium text-gray-500">To:</p>
                       <p className="text-lg font-bold text-gray-900">{anonymizedTargetName}</p>
@@ -152,55 +166,74 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
                     </fieldset>
                   </div>
 
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="text-base font-semibold text-gray-800">내 소개</h4>
-                    <p className="mt-1 text-sm text-gray-500">소개를 요청하는 본인에 대한 정보를 입력해주세요.</p>
-                    <div className="mt-4 grid grid-cols-1 gap-y-4 sm:grid-cols-2 sm:gap-x-4">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">이름</label>
-                            <input type="text" name="name" id="name" value={requesterInfo.name} onChange={handleRequesterInfoChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3" />
+                  {/* Form Sections */}
+                  <div className="mt-6 space-y-6">
+                    {/* 1. 내 소개 */}
+                    <section className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-bold text-gray-800 text-lg mb-4">1. 내 소개</h3>
+                        <div className="space-y-4">
+                            <div className="relative">
+                                <User className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                                <input type="text" name="requesterName" value={formData.requesterName} onChange={handleInputChange} placeholder="이름" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+                            <div className="relative">
+                                <Briefcase className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                                <input type="text" name="requesterTitle" value={formData.requesterTitle} onChange={handleInputChange} placeholder="직함" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+                            <div className="relative">
+                                <Building className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                                <input type="text" name="requesterCompany" value={formData.requesterCompany} onChange={handleInputChange} placeholder="회사명" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
+                            <div className="relative">
+                                <Linkedin className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                                <input type="text" name="requesterLinkedin" value={formData.requesterLinkedin} onChange={handleInputChange} placeholder="링크드인 프로필 URL (선택)" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                            </div>
+                            <div className="relative">
+                                <InformationCircleIcon className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                                <textarea name="requesterRoleDescription" value={formData.requesterRoleDescription} onChange={handleInputChange} placeholder="한 두줄 정도의 간단한 회사나 역할 설명" rows={2} className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                            </div>
                         </div>
-                        <div>
-                            <label htmlFor="title" className="block text-sm font-medium text-gray-700">직함</label>
-                            <input type="text" name="title" id="title" value={requesterInfo.title} onChange={handleRequesterInfoChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3" />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label htmlFor="company" className="block text-sm font-medium text-gray-700">회사명</label>
-                            <input type="text" name="company" id="company" value={requesterInfo.company} onChange={handleRequesterInfoChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3" />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label htmlFor="linkedin" className="block text-sm font-medium text-gray-700">링크드인 (선택)</label>
-                            <input type="text" name="linkedin" id="linkedin" value={requesterInfo.linkedin} onChange={handleRequesterInfoChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3" />
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label htmlFor="roleDescription" className="block text-sm font-medium text-gray-700">간단한 회사나 역할 설명</label>
-                            <textarea name="roleDescription" id="roleDescription" rows={2} value={requesterInfo.roleDescription} onChange={handleRequesterInfoChange} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3"></textarea>
-                            <p className="mt-1 text-xs text-gray-500">한두 줄이면 충분합니다.</p>
-                        </div>
-                        <div className="sm:col-span-2">
-                            <label htmlFor="background" className="block text-sm font-medium text-gray-700">신뢰를 줄 수 있는 간단한 배경</label>
-                            <input type="text" name="background" id="background" value={requesterInfo.background} onChange={handleRequesterInfoChange} placeholder="예: 저희는 B2B 세일즈 SaaS를 운영하고 있고..." className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3" />
-                        </div>
-                    </div>
-                  </div>
+                    </section>
 
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <h4 className="text-base font-semibold text-gray-800">소개받고 싶은 이유</h4>
-                    <label htmlFor="message" className="mt-2 block text-sm font-medium text-gray-700">
-                      소개 요청 배경 및 목적
-                    </label>
-                    <p className="mt-1 text-sm text-gray-500">이 메시지는 연결자에게만 전달됩니다. 왜 소개받고 싶은지 알려주세요.</p>
-                    <div className="mt-2">
-                      <textarea
-                        rows={5}
-                        name="message"
-                        id="message"
-                        value={message}퍄
-                        onChange={(e) => setMessage(e.target.value)}
-                        className="block w-full rounded-md border-gray-300 shadow-sm focus:border-brand focus:ring-brand sm:text-sm py-2 px-3"
-                        placeholder={`${anonymizedTargetName}님과 어떤 이야기를 나누고 싶으신가요?`}
-                      ></textarea>
-                    </div>
+                    {/* 2. 소개받고 싶은 이유 */}
+                    <section className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-bold text-gray-800 text-lg mb-4">2. 소개받고 싶은 이유</h3>
+                        <div className="relative">
+                            <FileText className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                            <textarea name="requestReason" value={formData.requestReason} onChange={handleInputChange} placeholder="소개 요청 배경 및 목적" rows={4} className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                    </section>
+
+                    {/* 3. 실제 요청 문구 */}
+                    <section className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-bold text-gray-800 text-lg mb-4">3. 실제 요청 문구</h3>
+                        <div className="relative">
+                            <FileText className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                            <textarea name="actualRequestWording" value={formData.actualRequestWording} onChange={handleInputChange} rows={4} className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                    </section>
+                    
+                    {/* 4. 리워드 액수 */}
+                    <section className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-bold text-gray-800 text-lg mb-4">4. 리워드 액수 (원)</h3>
+                        <div className="relative">
+                            <Gift className="absolute top-3 left-3 h-5 w-5 text-gray-400" />
+                            <input type="number" name="rewardAmount" value={formData.rewardAmount} onChange={handleInputChange} placeholder="총 리워드 액수 (숫자만 입력)" className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
+                        </div>
+                        <p className="mt-3 text-xs text-gray-500">
+                            해당 리워드는 소개 대상자가 비즈니스 이메일 공개 수락시, 소개자와 소개 대상자에게 각 50%씩 분배됩니다.
+                            <br />
+                            소개를 해주는 분이 소개 대상자에게 소개를 해줄 수 있을 정도의 모티베이션을 얻을 수 있는 금액은 입력해주시길 바랍니다.
+                        </p>
+                    </section>
+
+                    {/* 5. 미리보기 */}
+                    <section className="bg-gray-50 rounded-xl p-6">
+                        <h3 className="font-bold text-gray-800 text-lg mb-4">5. 소개자가 소개 대상자에게 보낼 메세지 미리보기</h3>
+                        <div className="bg-white p-4 rounded-md border border-gray-300 text-xs leading-relaxed whitespace-pre-wrap">
+                            {messagePreview}
+                        </div>
+                    </section>
                   </div>
                 </div>
               </div>
