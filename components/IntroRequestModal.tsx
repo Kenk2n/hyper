@@ -67,7 +67,7 @@ const IntroRequestModal: React.FC<IntroRequestModalProps> = ({ isOpen, onClose, 
     requesterRoleDescription: '',
     requestReason: '',
     actualRequestWording: '혹시 연결해주셔도 괜찮을까요?\n 다음과 같은 목적으로 소개를 요청드리고자 합니다.',
-    rewardAmount: '60000', // Default value
+    rewardAmount: '', // Default value
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

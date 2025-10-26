@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, RefreshCcw, User, Building, Briefcase, Mail, Phone, Gift, Linkedin, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, RefreshCcw, User, Building, Briefcase, Mail, Phone, Gift, Linkedin, Info, MessageSquare } from 'lucide-react';
 import EmailPreviewModal from '../EmailPreviewModal'; // Import the modal component
 
 // --- 타입 정의 ---
@@ -11,11 +11,11 @@ interface FaqItemProps {
 const requester = {
     name: '도진우',
     title: 'Software Engineer',
-    company: '도비스튜디오 (Navers)',
+    company: '도비스튜디오 ',
     profileImageUrl: 'https://cf.channel.io/thumb/200x200/pub-file/145640/677787db863f91cd0229/tmp-2113922959',
     linkedinUrl: 'https://www.linkedin.com/in/example', // 링크드인 URL 추가
     roleDescription: '도비스튜디오 AI 부서에서 대규모 언어 모델을 개발하고 있습니다.',
-    background: '저희는 B2B 세일즈 SaaS를 운영하고 있고, 현재 대기업 확장을 준비 중입니다.'
+    requestMessage: '안녕하세요, 저희 팀에서 찾고 있는 전문가와 일치하여 소개를 요청드립니다. 좋은 기회에 대해 이야기 나누고 싶습니다.'
 };
 
 const introducee = {
@@ -83,10 +83,9 @@ const ReferralRequestView: React.FC = () => {
 
     const handleAction = (action: 'accepted' | 'declined') => {
         if (action === 'accepted') {
-            //@ts-ignore
-            const isFormValid = Object.values(profileInput).every(field => field.trim() !== '');
-            if (!isFormValid) {
-                showToast('공유할 프로필의 모든 정보를 입력해주세요.', 'warning');
+            const { name, company, jobTitle, email } = profileInput;
+            if (!name || !company || !jobTitle || !email) {
+                showToast('전화번호를 제외한 모든 정보를 입력해주세요.', 'warning');
                 return;
             }
             setIsEmailPreviewOpen(true); // Open the preview modal
@@ -111,6 +110,14 @@ const ReferralRequestView: React.FC = () => {
         }, 1500);
     };
 
+    const inputFields = [
+        { name: 'name', placeholder: '이름', icon: User, required: true },
+        { name: 'company', placeholder: '회사명', icon: Building, required: true },
+        { name: 'jobTitle', placeholder: '직책', icon: Briefcase, required: true },
+        { name: 'email', placeholder: '이메일', icon: Mail, required: true },
+        { name: 'phone', placeholder: '전화번호 (선택)', icon: Phone, required: false },
+    ];
+
     return (
         <div className="bg-gray-50 min-h-screen font-sans p-4 sm:p-6 lg:p-8">
             <main className="max-w-3xl mx-auto">
@@ -119,7 +126,7 @@ const ReferralRequestView: React.FC = () => {
                 <div className="text-center mb-8">
                     <h1 className="text-3xl font-bold text-gray-800">비즈니스 소개 요청</h1>
                     <p className="text-gray-600 mt-2">
-                        안녕하세요 <span className="font-semibold text-blue-600">{introducee.name}</span>님, 새로운 기회가 도착했습니다.
+                        안녕하세요 <span className="font-semibold text-blue-600">{introducee.name}</span>님, 새로운 소개 요청이 도착했습니다.
                     </p>
                 </div>
 
@@ -143,8 +150,8 @@ const ReferralRequestView: React.FC = () => {
                             <p><strong className="text-gray-800">회사/역할:</strong> {requester.roleDescription}</p>
                         </div>
                         <div className="flex items-start space-x-3">
-                            <Building className="h-5 w-5 text-gray-400 flex-shrink-0 mt-1" />
-                            <p><strong className="text-gray-800">추진 배경:</strong> {requester.background}</p>
+                            <MessageSquare className="h-5 w-5 text-gray-400 flex-shrink-0 mt-1" />
+                            <p><strong className="text-gray-800">요청 메시지:</strong> {requester.requestMessage}</p>
                         </div>
                         {requester.linkedinUrl && (
                             <div className="flex items-start space-x-3">
@@ -191,15 +198,15 @@ const ReferralRequestView: React.FC = () => {
                                     <div className="bg-gray-50 rounded-xl p-4 border">
                                         <div className="font-semibold text-gray-800 mb-2 flex items-center gap-1.5">👤 요청자</div>
                                         <div className="text-gray-600 text-sm leading-relaxed">
-                                            <strong>연락처 전달 예정</strong><br />
-                                            곧 연락처를 받고<br />연락을 드릴 것입니다.
+                                            <strong>2025.10.11 ~ 2025.10.17</strong><br />
+                                            입금 요청, 입금 확인 중
                                         </div>
                                     </div>
                                     <div className="bg-gray-50 rounded-xl p-4 border">
-                                        <div className="font-semibold text-gray-800 mb-2 flex items-center gap-1.5">🔗 소개자</div>
+                                        <div className="font-semibold text-gray-800 mb-2 flex items-center gap-1.5">🔗 하이퍼세일즈</div>
                                         <div className="text-gray-600 text-sm leading-relaxed">
-                                            <strong>연결 역할 완료</strong><br />
-                                            가치 있는 연결을<br />만들어 주셨습니다.
+                                            입금 확인중입니다.<br />
+                                            확인후 소개 당사자님께 입금 및 연락처를 전달드릴 예정입니다.
                                         </div>
                                     </div>
                                     <div className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4">
@@ -219,7 +226,7 @@ const ReferralRequestView: React.FC = () => {
                                 <div className="mt-2 p-5 bg-gray-50 rounded-lg border text-gray-700 text-left">
                                     <strong className="text-base text-gray-900">앞으로 이렇게 진행됩니다.</strong>
                                     <ul className="pl-5 mt-3 space-y-2 text-sm list-disc list-inside">
-                                        <li><strong>{requester.name}</strong>님께 회원님의 성함과 비즈니스 이메일이 전달됩니다.</li>
+                                        <li><strong>{requester.name}</strong>님께 입금을 요청드렸습니다. 입금이 7일 이내에 이뤄지지 않는 경우 해당 소개 건이 자동 취소되며, 보상금 지급과 연락처 공개도 이루어지지 않습니다.</li>
                                         <li><strong>{requester.name}</strong>님께서 곧 이메일 등으로 정식으로 연락드릴 것입니다.</li>
                                         <li>리워드 지급을 위한 <strong>계좌 정보 입력 안내 메일</strong>이 별도로 발송될 예정이니, 잠시만 기다려주세요.</li>
                                     </ul>
@@ -236,13 +243,7 @@ const ReferralRequestView: React.FC = () => {
                             {/* --- 정보 입력 폼 --- */}
                             <h3 className="font-bold text-gray-800 text-center text-xl mb-6">공개할 프로필 정보 입력</h3>
                             <div className="space-y-4">
-                                {[
-                                    { name: 'name', placeholder: '이름', icon: User },
-                                    { name: 'company', placeholder: '회사명', icon: Building },
-                                    { name: 'jobTitle', placeholder: '직책', icon: Briefcase },
-                                    { name: 'email', placeholder: '이메일', icon: Mail },
-                                    { name: 'phone', placeholder: '전화번호', icon: Phone },
-                                ].map((field) => (
+                                {inputFields.map((field) => (
                                     <div key={field.name} className="relative">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <field.icon className="h-5 w-5 text-gray-400" />
@@ -252,6 +253,7 @@ const ReferralRequestView: React.FC = () => {
                                             value={profileInput[field.name as keyof typeof profileInput]}
                                             onChange={handleInputChange}
                                             placeholder={field.placeholder}
+                                            required={field.required}
                                             className="w-full pl-10 pr-3 py-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors text-base"
                                         />
                                     </div>
